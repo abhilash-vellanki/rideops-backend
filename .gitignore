@@ -1,0 +1,86 @@
+HELP.md
+
+### Maven ###
+target/
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# Keep the Maven Wrapper committed.
+!.mvn/
+!.mvn/wrapper/
+!.mvn/wrapper/**
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea/
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+
+### macOS ###
+.DS_Store
+.AppleDouble
+.LSOverride
+
+### Logs ###
+*.log
+*.log.*
+logs/
+
+### Temporary files ###
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+.cache/
+
+### Local environment and secret-bearing overrides ###
+.env
+.env.*
+!.env.example
+!.env.sample
+.envrc
+.direnv/
+
+application-local.properties
+application-local.yml
+application-local.yaml
+application-secrets.properties
+application-secrets.yml
+application-secrets.yaml
+application-overrides.properties
+application-overrides.yml
+application-overrides.yaml
+
+compose.override.yml
+compose.override.yaml
+docker-compose.override.yml
+docker-compose.override.yaml
+
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
