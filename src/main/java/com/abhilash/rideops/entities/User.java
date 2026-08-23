@@ -11,7 +11,12 @@ import lombok.Setter;
 import java.util.Collection;
 import java.util.Set;
 import java.util.stream.Collectors;
-
+/**
+ * name: the generator name used by Java/JPA.
+ * sequenceName: the actual sequence name in PostgreSQL.
+ * allocationSize: how many IDs Hibernate reserves at once.
+ * generator: connects @GeneratedValue to the named generator.
+ * */
 @Entity
 @Getter
 @Setter
