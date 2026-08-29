@@ -7,6 +7,6 @@ import lombok.Data;
 @Data
 public class RideStartDTO {
     @NotBlank
-    @Pattern(regexp = "\\d{4,6}")
+    @Pattern(regexp = "\\d{4}")
     private String otp;
 }

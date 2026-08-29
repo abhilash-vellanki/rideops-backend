@@ -7,35 +7,39 @@ import com.abhilash.rideops.entities.Rider;
 import com.abhilash.rideops.entities.enums.RideRequestStatus;
 import com.abhilash.rideops.entities.enums.RideStatus;
 import com.abhilash.rideops.exceptions.ResourceNotFoundException;
+import com.abhilash.rideops.exceptions.RuntimeConflictException;
 import com.abhilash.rideops.repositories.RideRepository;
 import com.abhilash.rideops.services.RideRequestService;
 import com.abhilash.rideops.services.RideService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.Random;
+import java.security.SecureRandom;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class RideServiceImpl implements RideService {
 
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+
     private final RideRepository rideRepository;
     private final RideRequestService rideRequestService;
-    private final ModelMapper mapper;
     @Override
     public Ride createNewRide(RideRequest rideRequest, Driver driver) {
         rideRequest.setRideRequestStatus(RideRequestStatus.CONFIRMED);
-        Ride ride=mapper.map(rideRequest,Ride.class);
+        Ride ride = new Ride();
+        ride.setPickupLocation(rideRequest.getPickupLocation());
+        ride.setDropOffLocation(rideRequest.getDropOffLocation());
+        ride.setRider(rideRequest.getRider());
+        ride.setPaymentMethod(rideRequest.getPaymentMethod());
+        ride.setFare(rideRequest.getFare());
         ride.setRideStatus(RideStatus.CONFIRMED);
         ride.setDriver(driver);
         ride.setOtp(generateRandomOTP());
-        ride.setId(null);
         rideRequestService.update(rideRequest);
         Ride savedRide = rideRepository.save(ride);
         log.info("Ride created: rideId={}, rideRequestId={}, driverId={}, riderId={}",
@@ -52,6 +56,10 @@ public class RideServiceImpl implements RideService {
     @Override
     public Ride updateRideStatus(Ride ride, RideStatus rideStatus) {
         RideStatus previousStatus = ride.getRideStatus();
+        if (!isAllowedTransition(previousStatus, rideStatus)) {
+            throw new RuntimeConflictException("Ride " + ride.getId() + " cannot transition from "
+                    + previousStatus + " to " + rideStatus);
+        }
         ride.setRideStatus(rideStatus);
         Ride savedRide = rideRepository.save(ride);
         log.info("Ride status updated: rideId={}, previousStatus={}, status={}",
@@ -61,18 +69,25 @@ public class RideServiceImpl implements RideService {
     }
 
     @Override
-    public Page<Ride> getAllRidesOfRider(Rider rider, PageRequest pageRequest) {
-        return rideRepository.findByRiderOrderByCreatedTimeDescIdDesc(rider,pageRequest);
+    public Page<Ride> getAllRidesOfRider(Rider rider, Pageable pageable) {
+        return rideRepository.findByRiderOrderByCreatedTimeDescIdDesc(rider,pageable);
     }
 
     @Override
-    public Page<Ride> getAllRidesOfDriver(Driver driver, PageRequest pageRequest) {
-        return rideRepository.findByDriverOrderByCreatedTimeDescIdDesc(driver,pageRequest);
+    public Page<Ride> getAllRidesOfDriver(Driver driver, Pageable pageable) {
+        return rideRepository.findByDriverOrderByCreatedTimeDescIdDesc(driver,pageable);
     }
 
     private String generateRandomOTP(){
-        Random random=new Random();
-        int otp=random.nextInt(10000); // 0 to 9999
+        int otp = SECURE_RANDOM.nextInt(10000);
         return String.format("%04d",otp);
+    }
+
+    private boolean isAllowedTransition(RideStatus currentStatus, RideStatus targetStatus) {
+        return switch (currentStatus) {
+            case CONFIRMED -> targetStatus == RideStatus.ONGOING || targetStatus == RideStatus.CANCELLED;
+            case ONGOING -> targetStatus == RideStatus.ENDED;
+            case CANCELLED, ENDED -> false;
+        };
     }
 }

@@ -2,25 +2,30 @@ package com.abhilash.rideops.controllers;
 
 import com.abhilash.rideops.dto.*;
 import com.abhilash.rideops.services.RiderService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import org.springframework.validation.annotation.Validated;
 
 @RestController
 @RequestMapping("/riders")
 @RequiredArgsConstructor
 @Secured("ROLE_RIDER")
+@Validated
 public class RiderController {
 
     private final RiderService riderService;
 
     @PostMapping("/requestRide")
-    public ResponseEntity<RideRequestDTO> requestRide(@RequestBody RideRequestDTO rideRequestDTO){
-        return ResponseEntity.ok(riderService.requestRide(rideRequestDTO));
+    public ResponseEntity<RideRequestDTO> requestRide(@Valid @RequestBody CreateRideRequestDTO rideRequestDTO){
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED)
+                .body(riderService.requestRide(rideRequestDTO));
     }
 
 
@@ -31,7 +36,7 @@ public class RiderController {
 
 
     @PostMapping("/rateDriver")
-    public ResponseEntity<DriverDTO> rateDriver(@RequestBody RatingDTO ratingDTO){
+    public ResponseEntity<DriverDTO> rateDriver(@Valid @RequestBody RatingDTO ratingDTO){
         return ResponseEntity.ok(riderService.rateDriver(ratingDTO.getRideId(),ratingDTO.getRating()));
     }
 
@@ -41,8 +46,9 @@ public class RiderController {
     }
 
     @GetMapping("/getMyRides")
-    public ResponseEntity<Page<RiderRideDTO>> getMyRides(@RequestParam(defaultValue = "0")Integer pageNumber,
-                                                         @RequestParam(defaultValue = "10",required = false) Integer pageSize){
+    public ResponseEntity<Page<RiderRideDTO>> getMyRides(
+            @RequestParam(defaultValue = "0") @Min(0) Integer pageNumber,
+            @RequestParam(defaultValue = "10") @Min(1) @Max(100) Integer pageSize) {
         PageRequest pageRequest=PageRequest.of(pageNumber,pageSize);
         return ResponseEntity.ok(riderService.getAllMyRides(pageRequest));
     }

@@ -7,6 +7,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -19,13 +21,16 @@ public class Wallet {
     @SequenceGenerator(name = "wallet_id_generator", sequenceName = "wallet_id_seq", allocationSize = 1)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "wallet_id_generator")
     private Long id;
+    @Version
+    private Long version;
     @OneToOne(fetch = FetchType.LAZY,optional = false)
     private User user;
 
-    private Double balance=0.0;
+    @Column(nullable = false, precision = 19, scale = 2)
+    private BigDecimal balance = BigDecimal.ZERO;
 
     @OneToMany(mappedBy = "wallet",fetch = FetchType.LAZY,cascade = CascadeType.ALL)
     @JsonIgnore
-    private List<WalletTransactions> transactions;
+    private List<WalletTransactions> transactions = new ArrayList<>();
 
 }

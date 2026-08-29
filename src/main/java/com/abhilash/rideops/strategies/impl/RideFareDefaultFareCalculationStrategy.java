@@ -7,6 +7,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -14,10 +17,12 @@ public class RideFareDefaultFareCalculationStrategy  implements RideFareCalculat
 
     private final DistanceServiceOSRMImpl distanceServiceOSRM;
     @Override
-    public double calculateFare(RideRequest rideRequest) {
+    public BigDecimal calculateFare(RideRequest rideRequest) {
         double distance=distanceServiceOSRM.calculateDistance(rideRequest.getPickupLocation(),rideRequest.getDropOffLocation());
         log.debug("Default fare calculated: rideRequestId={}, distanceKm={}, multiplier={}",
                 rideRequest.getId(), distance, RIDE_FARE_MULTIPLIER);
-        return distance*RIDE_FARE_MULTIPLIER;
+        return BigDecimal.valueOf(distance)
+                .multiply(RIDE_FARE_MULTIPLIER)
+                .setScale(2, RoundingMode.HALF_UP);
     }
 }

@@ -14,5 +14,6 @@ public class DriverDTO {
     private UserDTO user;
     private Double rating;
     private DriverStatus status;
+    private PointDTO currentLocation;
     private String vehicleId;
 }

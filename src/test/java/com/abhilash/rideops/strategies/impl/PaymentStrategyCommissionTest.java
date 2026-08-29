@@ -19,8 +19,10 @@ class PaymentStrategyCommissionTest {
 
     @Test
     void calculatesThirtyPercentCommissionRoundedToCents() {
-        assertEquals(new BigDecimal("30.00"), paymentStrategy.calculatePlatformCommission(100.0));
-        assertEquals(new BigDecimal("3.02"), paymentStrategy.calculatePlatformCommission(10.05));
+        assertEquals(new BigDecimal("30.00"),
+                paymentStrategy.calculatePlatformCommission(new BigDecimal("100.00")));
+        assertEquals(new BigDecimal("3.02"),
+                paymentStrategy.calculatePlatformCommission(new BigDecimal("10.05")));
     }
 
     @Test
@@ -28,8 +30,8 @@ class PaymentStrategyCommissionTest {
         assertThrows(IllegalArgumentException.class,
                 () -> paymentStrategy.calculatePlatformCommission(null));
         assertThrows(IllegalArgumentException.class,
-                () -> paymentStrategy.calculatePlatformCommission(0.0));
+                () -> paymentStrategy.calculatePlatformCommission(BigDecimal.ZERO));
         assertThrows(IllegalArgumentException.class,
-                () -> paymentStrategy.calculatePlatformCommission(-1.0));
+                () -> paymentStrategy.calculatePlatformCommission(new BigDecimal("-1.00")));
     }
 }

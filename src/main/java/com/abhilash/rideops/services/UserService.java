@@ -25,7 +25,7 @@ public class UserService implements UserDetailsService {
 
     public User getUserById(Long userId) {
         log.debug("Loading user by ID: userId={}", userId);
-        return userRepository.findById(userId).orElseThrow(
+        return userRepository.findByIdWithRoles(userId).orElseThrow(
                 ()->new ResourceNotFoundException("User not found: userId="+userId)
         );
     }

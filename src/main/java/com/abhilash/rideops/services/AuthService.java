@@ -5,6 +5,7 @@ import com.abhilash.rideops.dto.*;
 public interface AuthService {
     UserDTO signUp(SignUpDTO signUpDTO);
     DriverDTO onBoardNewDriver(Long userId,String vehicleId);
-    String[] login(LoginRequestDTO loginRequestDTO);
-    String refreshToken(String refreshToken);
+    TokenPair login(LoginRequestDTO loginRequestDTO);
+    TokenPair refreshToken(String refreshToken);
+    void logout(String refreshToken);
 }

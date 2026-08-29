@@ -1,0 +1,74 @@
+<svg width="1600" height="440" viewBox="0 0 1600 440" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title description">
+  <title id="title">RideOps Backend</title>
+  <desc id="description">A dark blue RideOps banner with a route, map pins, and a car.</desc>
+  <defs>
+    <linearGradient id="background" x1="80" y1="20" x2="1510" y2="420" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#071426"/>
+      <stop offset="0.55" stop-color="#0B2440"/>
+      <stop offset="1" stop-color="#073B4C"/>
+    </linearGradient>
+    <linearGradient id="road" x1="920" y1="110" x2="1510" y2="382" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#35D0BA"/>
+      <stop offset="1" stop-color="#4E8CFF"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="126" y1="116" x2="535" y2="330" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#5DE4C7"/>
+      <stop offset="1" stop-color="#4E8CFF"/>
+    </linearGradient>
+    <pattern id="grid" width="64" height="64" patternUnits="userSpaceOnUse">
+      <path d="M64 0H0V64" stroke="#9BB7D4" stroke-opacity="0.07"/>
+    </pattern>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="9" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1600" height="440" rx="28" fill="url(#background)"/>
+  <rect width="1600" height="440" rx="28" fill="url(#grid)"/>
+  <circle cx="1490" cy="-20" r="270" fill="#4E8CFF" fill-opacity="0.08"/>
+  <circle cx="1110" cy="470" r="250" fill="#35D0BA" fill-opacity="0.07"/>
+
+  <g transform="translate(92 91)">
+    <rect width="232" height="232" rx="58" fill="#0B1F35" stroke="#5DE4C7" stroke-opacity="0.42" stroke-width="3"/>
+    <path d="M45 169C69 111 94 199 120 130C139 79 160 96 188 54" stroke="url(#accent)" stroke-width="15" stroke-linecap="round" stroke-dasharray="1 28"/>
+    <path d="M49 176C75 113 97 202 125 132C145 82 164 100 190 58" stroke="url(#accent)" stroke-width="5" stroke-linecap="round"/>
+    <path d="M61 73C61 49.8 79.8 31 103 31C126.2 31 145 49.8 145 73C145 104.5 103 139 103 139C103 139 61 104.5 61 73Z" fill="#0D2E48" stroke="#5DE4C7" stroke-width="5"/>
+    <circle cx="103" cy="73" r="14" fill="#5DE4C7"/>
+    <g transform="translate(119 154)">
+      <path d="M6 31L17 9C19 5 23 3 28 3H70C75 3 79 5 81 9L92 31" stroke="#D9F8F1" stroke-width="6" stroke-linecap="round"/>
+      <rect x="1" y="27" width="97" height="39" rx="13" fill="#4E8CFF"/>
+      <circle cx="22" cy="65" r="9" fill="#071426" stroke="#D9F8F1" stroke-width="4"/>
+      <circle cx="77" cy="65" r="9" fill="#071426" stroke="#D9F8F1" stroke-width="4"/>
+      <rect x="16" y="35" width="17" height="7" rx="3.5" fill="#D9F8F1"/>
+      <rect x="66" y="35" width="17" height="7" rx="3.5" fill="#D9F8F1"/>
+    </g>
+  </g>
+
+  <g transform="translate(375 116)">
+    <text x="0" y="77" fill="#F3FAFF" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="86" font-weight="760" letter-spacing="-3">RideOps</text>
+    <text x="4" y="137" fill="#5DE4C7" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="34" font-weight="650" letter-spacing="6">BACKEND</text>
+    <text x="4" y="194" fill="#B9CCDF" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="25">Secure ride orchestration, spatial matching, payments &amp; operations</text>
+    <g transform="translate(4 224)">
+      <rect width="146" height="42" rx="21" fill="#5DE4C7" fill-opacity="0.12" stroke="#5DE4C7" stroke-opacity="0.45"/>
+      <text x="73" y="28" text-anchor="middle" fill="#D9F8F1" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="17" font-weight="600">Spring Boot 4</text>
+      <rect x="160" width="153" height="42" rx="21" fill="#4E8CFF" fill-opacity="0.12" stroke="#4E8CFF" stroke-opacity="0.45"/>
+      <text x="236.5" y="28" text-anchor="middle" fill="#DCE8FF" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="17" font-weight="600">PostgreSQL 17</text>
+      <rect x="327" width="112" height="42" rx="21" fill="#5DE4C7" fill-opacity="0.12" stroke="#5DE4C7" stroke-opacity="0.45"/>
+      <text x="383" y="28" text-anchor="middle" fill="#D9F8F1" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="17" font-weight="600">PostGIS</text>
+    </g>
+  </g>
+
+  <g opacity="0.9">
+    <path d="M1044 77C1082 129 1038 183 1086 222C1131 259 1212 223 1242 282C1271 339 1356 359 1519 318" stroke="url(#road)" stroke-width="7" stroke-linecap="round" stroke-dasharray="2 22" filter="url(#glow)"/>
+    <path d="M1044 77C1082 129 1038 183 1086 222C1131 259 1212 223 1242 282C1271 339 1356 359 1519 318" stroke="#C6FFF4" stroke-opacity="0.68" stroke-width="2" stroke-linecap="round"/>
+    <g transform="translate(1007 36)">
+      <path d="M0 39C0 17.5 17.5 0 39 0C60.5 0 78 17.5 78 39C78 68 39 100 39 100C39 100 0 68 0 39Z" fill="#102F49" stroke="#5DE4C7" stroke-width="4"/>
+      <circle cx="39" cy="39" r="13" fill="#5DE4C7"/>
+    </g>
+    <g transform="translate(1472 272)">
+      <path d="M0 31C0 13.9 13.9 0 31 0C48.1 0 62 13.9 62 31C62 54 31 80 31 80C31 80 0 54 0 31Z" fill="#102F49" stroke="#4E8CFF" stroke-width="4"/>
+      <circle cx="31" cy="31" r="10" fill="#4E8CFF"/>
+    </g>
+  </g>
+</svg>

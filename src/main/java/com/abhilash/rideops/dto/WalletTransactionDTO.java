@@ -9,6 +9,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
 
 @Data
 @AllArgsConstructor
@@ -18,7 +19,7 @@ public class WalletTransactionDTO {
     private Long id;
     @NotNull
     @Positive
-    private Double amount;
+    private BigDecimal amount;
     @NotNull
     private TransactionType transactionType;
     @NotNull

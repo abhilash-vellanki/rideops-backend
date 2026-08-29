@@ -3,7 +3,6 @@ package com.abhilash.rideops.strategies.impl;
 import com.abhilash.rideops.entities.Driver;
 import com.abhilash.rideops.entities.Payment;
 import com.abhilash.rideops.entities.enums.PaymentStatus;
-import com.abhilash.rideops.entities.enums.TransactionMethod;
 import com.abhilash.rideops.repositories.PaymentRepository;
 import com.abhilash.rideops.services.PlatformCommissionService;
 import com.abhilash.rideops.services.WalletService;
@@ -27,8 +26,8 @@ public class CashPaymentStrategy implements PaymentStrategy {
     public void processPayment(Payment payment) {
         Driver driver = payment.getRide().getDriver();
         BigDecimal platformCommission = calculatePlatformCommission(payment.getAmount());
-        walletService.deductMoneyFromWallet(driver.getUser(), platformCommission.doubleValue(), null
-                , payment.getRide(), TransactionMethod.RIDE);
+        walletService.deductCommissionFromDriverWallet(
+                driver.getUser(), platformCommission, payment.getRide());
         platformCommissionService.recordCommission(payment, platformCommission);
 
         payment.setPaymentStatus(PaymentStatus.CONFIRMED);

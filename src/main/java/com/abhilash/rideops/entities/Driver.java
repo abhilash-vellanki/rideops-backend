@@ -11,24 +11,25 @@ import org.locationtech.jts.geom.Point;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@Table(indexes = {
-        @Index(name="idx_driver_vehicle_id",columnList = "vehicleId")
-})
 public class Driver {
     @Id
     @SequenceGenerator(name = "driver_id_generator", sequenceName = "driver_id_seq", allocationSize = 1)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "driver_id_generator")
     private Long id;
+    @Version
+    private Long version;
 
-    @OneToOne
-    @JoinColumn(name="user_id")
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name="user_id", nullable = false, unique = true)
     private User user;
+    @Column(nullable = false)
     private Double rating;
     @Enumerated(EnumType.STRING)
     @Builder.Default
+    @Column(nullable = false)
     private DriverStatus status = DriverStatus.OFFLINE;
     @Column(columnDefinition = "Geometry(Point,4326)")
     private Point currentLocation;
-    @Column(unique = true)
+    @Column(name = "vehicle_id", nullable = false, unique = true)
     private String vehicleId;
 }

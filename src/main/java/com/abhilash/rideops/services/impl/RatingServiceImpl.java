@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +29,7 @@ public class RatingServiceImpl implements RatingService {
     private final ModelMapper modelMapper;
 
     @Override
+    @Transactional
     public DriverDTO rateDriver(Ride ride, Integer rating) {
         Driver driver=ride.getDriver();
         Rating ratingObj=ratingRepository.findByRide(ride)
@@ -37,9 +39,7 @@ public class RatingServiceImpl implements RatingService {
         }
         ratingObj.setDriverRating(rating);
         ratingRepository.save(ratingObj);
-        Double avgRating= ratingRepository.findByDriver(driver).stream()
-                .mapToDouble(Rating::getDriverRating)
-                .average().orElse(0.0);
+        Double avgRating = ratingRepository.averageDriverRating(driver).orElse(0.0);
 
         driver.setRating(avgRating);
         Driver savedDriver=driverRepository.save(driver);
@@ -49,6 +49,7 @@ public class RatingServiceImpl implements RatingService {
     }
 
     @Override
+    @Transactional
     public RiderDTO rateRider(Ride ride, Integer rating) {
         Rider rider=ride.getRider();
         Rating ratingObj=ratingRepository.findByRide(ride)
@@ -58,9 +59,7 @@ public class RatingServiceImpl implements RatingService {
         }
         ratingObj.setRiderRating(rating);
         ratingRepository.save(ratingObj);
-        Double avgRating= ratingRepository.findByRider(rider).stream()
-                .mapToDouble(Rating::getDriverRating)
-                .average().orElse(0.0);
+        Double avgRating = ratingRepository.averageRiderRating(rider).orElse(0.0);
 
         rider.setRating(avgRating);
         Rider savedRider=riderRepository.save(rider);
@@ -71,6 +70,7 @@ public class RatingServiceImpl implements RatingService {
     }
 
     @Override
+    @Transactional
     public void createNewRating(Ride ride) {
         Rating rating=Rating.builder()
                 .driver(ride.getDriver())

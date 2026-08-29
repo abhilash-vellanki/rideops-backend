@@ -1,8 +1,10 @@
 package com.abhilash.rideops.filters;
 
 import com.abhilash.rideops.entities.User;
+import com.abhilash.rideops.exceptions.ResourceNotFoundException;
 import com.abhilash.rideops.services.UserService;
 import com.abhilash.rideops.utils.JWTUtil;
+import com.abhilash.rideops.security.RestAuthenticationEntryPoint;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -25,6 +27,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JWTUtil jwtUtil;
     private final UserService userService;
+    private final RestAuthenticationEntryPoint authenticationEntryPoint;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -36,26 +39,22 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         String token = header.substring(7);
         try {
-            Long userId = jwtUtil.getUserIdFromToken(token);
+            JWTUtil.TokenClaims tokenClaims = jwtUtil.parseAccessToken(token);
+            Long userId = tokenClaims.userId();
             if (SecurityContextHolder.getContext().getAuthentication() == null) {
                 User user = userService.getUserById(userId);
-                if (!jwtUtil.isTokenExpired(token)) {
-                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                            user, null, user.getAuthorities()
-                    );
-                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
-                    log.debug("JWT authentication established: userId={}, method={}",
-                            userId, request.getMethod());
-                } else {
-                    log.warn("Expired JWT rejected: userId={}, method={}",
-                            userId, request.getMethod());
-                }
+                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                        user, null, user.getAuthorities()
+                );
+                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                SecurityContextHolder.getContext().setAuthentication(authToken);
+                log.debug("JWT authentication established: userId={}, method={}",
+                        userId, request.getMethod());
             }
-        } catch (JwtException | IllegalArgumentException exception) {
+        } catch (JwtException | IllegalArgumentException | ResourceNotFoundException exception) {
             log.warn("Invalid or expired JWT rejected: method={}, path={}",
                     request.getMethod(), request.getRequestURI());
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid or expired access token");
+            authenticationEntryPoint.writeUnauthorized(request, response, "Invalid or expired access token");
             return;
         }
 

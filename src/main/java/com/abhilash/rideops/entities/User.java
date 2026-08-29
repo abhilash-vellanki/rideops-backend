@@ -7,6 +7,7 @@ import lombok.Setter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.hibernate.annotations.BatchSize;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -21,20 +22,24 @@ import java.util.stream.Collectors;
 @Entity
 @Getter
 @Setter
-@Table(name = "app_user",
-        indexes = {
-                @Index(name="idx_user_email",columnList = "email")
-        })
+@Table(name = "app_user")
 public class User implements UserDetails {
     @Id
     @SequenceGenerator(name = "app_user_id_generator", sequenceName = "app_user_id_seq", allocationSize = 1)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "app_user_id_generator")
     private Long id;
+    @Version
+    private Long version;
+    @Column(nullable = false, length = 100)
     private String name;
-    @Column(unique = true)
+    @Column(nullable = false, unique = true, length = 254)
     private String email;
+    @Column(nullable = false)
     private String password;
     @ElementCollection(fetch = FetchType.LAZY)
+    @BatchSize(size = 50)
+    @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
+    @Column(name = "roles", nullable = false)
     @Enumerated(EnumType.STRING)
     private Set<Role> roles;
 

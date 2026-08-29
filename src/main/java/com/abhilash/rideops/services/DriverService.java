@@ -4,21 +4,24 @@ package com.abhilash.rideops.services;
 import com.abhilash.rideops.dto.DriverDTO;
 import com.abhilash.rideops.dto.DriverRideDTO;
 import com.abhilash.rideops.dto.RiderDTO;
-import com.abhilash.rideops.dto.RiderRideDTO;
 import com.abhilash.rideops.entities.Driver;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+
+import java.util.Optional;
 
 public interface DriverService {
     DriverRideDTO cancelRide(Long rideId); //driver id passed from Spring security context holder
     DriverRideDTO startRide(Long rideId, String otp);
     DriverRideDTO endRide(Long rideId);
-    RiderRideDTO acceptRide(Long rideRequestId);
+    DriverRideDTO acceptRide(Long rideRequestId);
     RiderDTO rateRider(Long rideId, Integer rating);
     DriverDTO getMyProfile();
-    Page<DriverRideDTO> getAllMyRides(PageRequest pageRequest);
+    Page<DriverRideDTO> getAllMyRides(Pageable pageable);
     Driver getCurrentDriver();
-    Driver updateDriverAvailability(Driver driver);
+    Driver updateDriverStatus(Driver driver, com.abhilash.rideops.entities.enums.DriverStatus status);
+    DriverDTO updateMyStatus(com.abhilash.rideops.entities.enums.DriverStatus status);
+    DriverDTO updateMyLocation(com.abhilash.rideops.dto.PointDTO location);
     DriverDTO createNewDriver(Driver driver);
-    Driver findByVehicleId(String vehicleId);
+    Optional<Driver> findByVehicleId(String vehicleId);
 }

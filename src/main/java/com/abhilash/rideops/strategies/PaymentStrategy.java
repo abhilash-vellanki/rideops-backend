@@ -10,12 +10,11 @@ public interface PaymentStrategy {
 
     void processPayment(Payment payment);
 
-    default BigDecimal calculatePlatformCommission(Double paymentAmount) {
-        if (paymentAmount == null || paymentAmount <= 0) {
+    default BigDecimal calculatePlatformCommission(BigDecimal paymentAmount) {
+        if (paymentAmount == null || paymentAmount.signum() <= 0) {
             throw new IllegalArgumentException("Payment amount must be greater than zero to calculate commission");
         }
-        return BigDecimal.valueOf(paymentAmount)
-                .multiply(PLATFORM_COMMISSION_RATE)
+        return paymentAmount.multiply(PLATFORM_COMMISSION_RATE)
                 .setScale(2, RoundingMode.HALF_UP);
     }
 }

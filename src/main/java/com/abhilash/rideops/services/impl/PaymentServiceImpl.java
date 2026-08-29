@@ -24,7 +24,7 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     @Transactional
     public void processPayment(Ride ride) {
-        Payment payment=paymentRepository.findByRideForUpdate(ride).orElseThrow(
+        Payment payment=paymentRepository.findByRide(ride).orElseThrow(
                 ()->new ResourceNotFoundException("Payment not found: rideId="+ride.getId())
         );
         if (payment.getPaymentStatus() != PaymentStatus.PENDING) {

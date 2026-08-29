@@ -15,7 +15,10 @@ public class PaymentStrategyManager {
     private final WalletPaymentStrategy walletPaymentStrategy;
 
     public PaymentStrategy getPaymentStrategy(PaymentMethod paymentMethod){
-        if(paymentMethod.equals(PaymentMethod.WALLET)){
+        if (paymentMethod == null) {
+            throw new IllegalArgumentException("Payment method is required");
+        }
+        if(paymentMethod == PaymentMethod.WALLET){
             log.debug("Selected wallet payment strategy");
             return walletPaymentStrategy;
         }

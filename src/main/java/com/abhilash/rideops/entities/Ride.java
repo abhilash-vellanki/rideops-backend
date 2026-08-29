@@ -11,6 +11,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.locationtech.jts.geom.Point;
 
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
 
 @Entity
 @Getter
@@ -26,27 +27,32 @@ public class Ride {
     @SequenceGenerator(name = "ride_id_generator", sequenceName = "ride_id_seq", allocationSize = 1)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "ride_id_generator")
     private Long id;
-    @Column(columnDefinition = "Geometry(Point,4326)")
+    @Version
+    private Long version;
+    @Column(nullable = false, columnDefinition = "Geometry(Point,4326)")
     private Point pickupLocation;
-    @Column(columnDefinition = "Geometry(Point,4326)")
+    @Column(nullable = false, columnDefinition = "Geometry(Point,4326)")
     private Point dropOffLocation;
     @CreationTimestamp
     private LocalDateTime createdTime;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     private Rider rider;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     private Driver driver;
 
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private PaymentMethod paymentMethod;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private RideStatus rideStatus;
 
-    private Double fare;
+    @Column(nullable = false, precision = 19, scale = 2)
+    private BigDecimal fare;
     private LocalDateTime startedAt;
     private LocalDateTime endedAt;
     private String otp;

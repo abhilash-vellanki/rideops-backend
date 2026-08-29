@@ -1,6 +1,8 @@
 package com.abhilash.rideops.config;
 
 import com.abhilash.rideops.filters.JwtAuthFilter;
+import com.abhilash.rideops.security.RestAccessDeniedHandler;
+import com.abhilash.rideops.security.RestAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,8 +16,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-import static org.springframework.security.config.Customizer.withDefaults;
-
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
@@ -23,7 +23,13 @@ import static org.springframework.security.config.Customizer.withDefaults;
 public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
-    private static final String[] PUBLIC_ROUTES={"/auth/**","/v3/**","/actuator/**"};
+    private final RestAuthenticationEntryPoint authenticationEntryPoint;
+    private final RestAccessDeniedHandler accessDeniedHandler;
+    private static final String[] PUBLIC_ROUTES={
+            "/auth/signup", "/auth/login", "/auth/refresh", "/auth/logout",
+            "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html",
+            "/actuator/health", "/actuator/health/**"
+    };
 
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {
@@ -41,6 +47,9 @@ public class SecurityConfig {
                 .csrf(csrfConfig -> csrfConfig.disable())
                 .authorizeHttpRequests(authorizeRequests -> authorizeRequests.requestMatchers(PUBLIC_ROUTES).permitAll()
                 .anyRequest().authenticated())
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint(authenticationEntryPoint)
+                        .accessDeniedHandler(accessDeniedHandler))
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }

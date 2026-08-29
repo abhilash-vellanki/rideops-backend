@@ -7,18 +7,24 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class RideFareSurgePricingFareCalculationStrategy implements RideFareCalculationStrategy {
     private final DistanceServiceOSRMImpl distanceServiceOSRM;
-    private static final double SURGE_FACTOR=1.2;
+    private static final BigDecimal SURGE_FACTOR = new BigDecimal("1.20");
     @Override
-    public double calculateFare(RideRequest rideRequest) {
+    public BigDecimal calculateFare(RideRequest rideRequest) {
 
         double distance=distanceServiceOSRM.calculateDistance(rideRequest.getPickupLocation(),rideRequest.getDropOffLocation());
         log.debug("Surge fare calculated: rideRequestId={}, distanceKm={}, multiplier={}, surgeFactor={}",
                 rideRequest.getId(), distance, RIDE_FARE_MULTIPLIER, SURGE_FACTOR);
-        return distance*RIDE_FARE_MULTIPLIER*SURGE_FACTOR;
+        return BigDecimal.valueOf(distance)
+                .multiply(RIDE_FARE_MULTIPLIER)
+                .multiply(SURGE_FACTOR)
+                .setScale(2, RoundingMode.HALF_UP);
     }
 }

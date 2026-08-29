@@ -7,6 +7,7 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
 
 @Entity
 @Getter
@@ -24,19 +25,22 @@ public class WalletTransactions {
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "wallet_transactions_id_generator")
     private Long id;
 
-    private Double amount;
+    @Column(nullable = false, precision = 19, scale = 2)
+    private BigDecimal amount;
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private TransactionType transactionType;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private TransactionMethod transactionMethod;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     private Ride ride;
 
     private String transactionId;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     private Wallet wallet;
     @CreationTimestamp
     private LocalDateTime timeStamp;

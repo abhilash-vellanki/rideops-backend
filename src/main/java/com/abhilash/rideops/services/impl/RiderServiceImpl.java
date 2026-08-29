@@ -2,6 +2,7 @@ package com.abhilash.rideops.services.impl;
 
 
 import com.abhilash.rideops.dto.DriverDTO;
+import com.abhilash.rideops.dto.CreateRideRequestDTO;
 import com.abhilash.rideops.dto.RideRequestDTO;
 import com.abhilash.rideops.dto.RiderDTO;
 import com.abhilash.rideops.dto.RiderRideDTO;
@@ -17,17 +18,20 @@ import com.abhilash.rideops.services.RatingService;
 import com.abhilash.rideops.services.RideService;
 import com.abhilash.rideops.services.RiderService;
 import com.abhilash.rideops.strategies.RideStrategyManager;
+import com.abhilash.rideops.utils.GeometryUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Objects;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -41,14 +45,16 @@ public class RiderServiceImpl implements RiderService {
     private final DriverService driverService;
     private final RatingService ratingService;
     @Override
-    @Transactional
-    public RideRequestDTO requestRide(RideRequestDTO rideRequestDTO) {
-        Rider rider=getCurrrentRider();
-        RideRequest rideRequest=modelMapper.map(rideRequestDTO,RideRequest.class);
+    public RideRequestDTO requestRide(CreateRideRequestDTO rideRequestDTO) {
+        Rider rider = getCurrentRider();
+        RideRequest rideRequest = new RideRequest();
+        rideRequest.setPickupLocation(GeometryUtil.createPoint(rideRequestDTO.pickupLocation()));
+        rideRequest.setDropOffLocation(GeometryUtil.createPoint(rideRequestDTO.dropOffLocation()));
+        rideRequest.setPaymentMethod(rideRequestDTO.paymentMethod());
         rideRequest.setRideRequestStatus(RideRequestStatus.PENDING);
         rideRequest.setRider(rider);
 
-        Double fare=rideStrategyManager.rideFareCalculationStrategy().calculateFare(rideRequest);
+        BigDecimal fare = rideStrategyManager.rideFareCalculationStrategy().calculateFare(rideRequest);
         rideRequest.setFare(fare);
 
         RideRequest savedRideRequest=rideRequestRepository.save(rideRequest);
@@ -62,10 +68,11 @@ public class RiderServiceImpl implements RiderService {
     }
 
     @Override
+    @Transactional
     public RiderRideDTO cancelRide(Long rideId) {
-        Rider rider=getCurrrentRider();
-        Ride ride=rideService.getRideById(rideId);
-        if(!rider.equals(ride.getRider())){
+        Rider rider = getCurrentRider();
+        Ride ride = rideService.getRideById(rideId);
+        if (!Objects.equals(rider.getId(), ride.getRider().getId())) {
             log.warn("Ride cancellation rejected because rider does not own ride: rideId={}, riderId={}",
                     rideId, rider.getId());
             throw new AccessDeniedException("Rider "+rider.getId()+" cannot cancel ride "+rideId
@@ -78,16 +85,17 @@ public class RiderServiceImpl implements RiderService {
                     +ride.getRideStatus()+"; expected CONFIRMED");
         }
         Ride savedRide=rideService.updateRideStatus(ride,RideStatus.CANCELLED);
-        driverService.updateDriverAvailability(ride.getDriver());
+        driverService.updateDriverStatus(ride.getDriver(), com.abhilash.rideops.entities.enums.DriverStatus.AVAILABLE);
         log.info("Ride cancelled by rider: rideId={}, riderId={}", rideId, rider.getId());
         return modelMapper.map(savedRide,RiderRideDTO.class);
     }
 
     @Override
+    @Transactional
     public DriverDTO rateDriver(Long rideId, Integer rating) {
-        Ride ride=rideService.getRideById(rideId);
-        Rider rider=getCurrrentRider();
-        if(!rider.equals(ride.getRider())){
+        Ride ride = rideService.getRideById(rideId);
+        Rider rider = getCurrentRider();
+        if (!Objects.equals(rider.getId(), ride.getRider().getId())) {
             log.warn("Driver rating rejected because rider does not own ride: rideId={}, riderId={}",
                     rideId, rider.getId());
             throw new AccessDeniedException("Rider "+rider.getId()+" cannot rate the driver for ride "+rideId
@@ -105,15 +113,17 @@ public class RiderServiceImpl implements RiderService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public RiderDTO getMyProfile() {
-        Rider rider=getCurrrentRider();
+        Rider rider=getCurrentRider();
         return modelMapper.map(rider,RiderDTO.class);
 
     }
 
     @Override
-    public Page<RiderRideDTO> getAllMyRides(PageRequest pageRequest) {
-        Rider rider=getCurrrentRider();
+    @Transactional(readOnly = true)
+    public Page<RiderRideDTO> getAllMyRides(org.springframework.data.domain.Pageable pageRequest) {
+        Rider rider=getCurrentRider();
         return rideService.getAllRidesOfRider(rider,pageRequest)
                 .map(ride -> modelMapper.map(ride, RiderRideDTO.class));
 
@@ -128,7 +138,7 @@ public class RiderServiceImpl implements RiderService {
     }
 
     @Override
-    public Rider getCurrrentRider() {
+    public Rider getCurrentRider() {
         User user= (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         return riderRepository.findByUser(user).orElseThrow(
                 ()->new ResourceNotFoundException("No rider profile is associated with userId="+user.getId()));
