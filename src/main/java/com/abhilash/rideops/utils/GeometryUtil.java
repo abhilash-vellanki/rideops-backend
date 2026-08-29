@@ -24,7 +24,7 @@ public class GeometryUtil {
             throw new IllegalArgumentException("Point coordinates must not be null");
         }
         if (coordinates.length != 2) {
-            throw new IllegalArgumentException("Point coordinates must contain longitude and latitude");
+            throw new IllegalArgumentException("Point coordinates must contain exactly two values: longitude and latitude");
         }
 
         Double longitude = coordinates[0];
