@@ -31,3 +31,6 @@ jobs:
 
       - name: Build and run tests
         run: ./mvnw --batch-mode --no-transfer-progress clean verify
+
+      - name: Build Docker image
+        run: docker build -t rideops-backend:${{ github.sha }} .
