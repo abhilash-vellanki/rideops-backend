@@ -17,5 +17,20 @@ services:
       timeout: 5s
       retries: 10
 
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: rideops-backend:local
+    env_file:
+      - .env
+    environment:
+      JDBC_DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
   rideops_postgres_data:
