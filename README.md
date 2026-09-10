@@ -40,6 +40,7 @@
 - [Database migrations](#database-migrations)
 - [Consistency and error handling](#consistency-and-error-handling)
 - [Testing](#testing)
+- [CI/CD pipeline](#cicd-pipeline)
 - [Project structure](#project-structure)
 - [Production checklist](#production-checklist)
 - [Current scope](#current-scope)
@@ -65,7 +66,7 @@ The project deliberately keeps HTTP models separate from persistence models, val
 | Payments | Wallet and cash strategies, transaction ledger entries, insufficient-funds protection, and 30% commission accounting |
 | Ratings | One rating record per ride, one submission per side, 1–5 validation, and repository-calculated averages |
 | Data integrity | PostgreSQL sequences, Flyway migrations, non-null/unique/check constraints, deterministic pagination, and optimistic `@Version` locking |
-| Operations | Docker Compose for PostGIS, health endpoint, production profile, optional admin bootstrap, structured logging, and OpenAPI docs |
+| Operations | Multi-stage Docker image, Docker Compose, GitHub Actions CI/CD, EC2 deployment, health checks, production profile, structured logging, and OpenAPI docs |
 
 ## Technology stack
 
@@ -80,7 +81,7 @@ The project deliberately keeps HTTP models separate from persistence models, val
 | Mapping and validation | ModelMapper 3.2.0, Jakarta Bean Validation |
 | Routing | OSRM HTTP API through Spring `RestClient` |
 | API documentation | Springdoc OpenAPI 3.0.2, Swagger UI, OpenAPI 3.1 |
-| Build and local infrastructure | Maven Wrapper, Docker Compose |
+| Build and delivery | Maven Wrapper, Docker, Docker Compose, GitHub Actions, Docker Hub, AWS EC2 |
 | Testing | JUnit 5, Mockito, Spring Boot test starters, Testcontainers 1.20.0 |
 
 ## System architecture
@@ -716,11 +717,102 @@ docker compose config --quiet
 
 The suite covers DTO/entity mapping, coordinate validation, JWT typing, exception responses, payment commission behavior, wallet mutation and optimistic-lock configuration. The application-context integration test uses a PostGIS Testcontainer when Docker is available and is skipped otherwise.
 
+## CI/CD pipeline
+
+RideOps uses one GitHub Actions workflow for continuous integration and deployment. Pull requests are validated without publishing or deploying anything. A push to `main` runs the same quality checks and, only after they pass, publishes an immutable Docker image and deploys that exact image to Amazon EC2.
+
+```mermaid
+flowchart LR
+    Developer[Developer] -->|push / pull request| GitHub[GitHub repository]
+    GitHub --> Actions[GitHub Actions]
+
+    subgraph CI[Continuous Integration]
+        Checkout[Checkout source]
+        Java[Set up Java 21]
+        Verify[Maven clean verify<br/>compile + tests]
+        Buildx[Set up Docker Buildx]
+        Image[Build Docker image]
+        Checkout --> Java --> Verify --> Buildx --> Image
+    end
+
+    Actions --> CI
+    Image -->|pull request: build only| Complete[Validation complete]
+    Image -->|main push: publish| Hub[(Docker Hub)]
+
+    subgraph CD[Continuous Deployment — main only]
+        Copy[Copy compose.prod.yaml]
+        SSH[Connect to EC2 over SSH]
+        Pull[Pull commit-tagged image]
+        Compose[Docker Compose rollout]
+        Health[Retry /actuator/health<br/>for up to 60 seconds]
+        Copy --> SSH --> Pull --> Compose --> Health
+    end
+
+    Hub --> CD
+    CD --> EC2[RideOps on AWS EC2]
+    EC2 --> App[Spring Boot container]
+    EC2 --> PostGIS[PostgreSQL + PostGIS container]
+```
+
+### Pipeline behavior
+
+| Trigger | Build and tests | Docker image | EC2 deployment |
+|---|:---:|:---:|:---:|
+| Pull request targeting `main` | Yes | Built for validation only | No |
+| Push to `main` | Yes | Pushed to Docker Hub | Yes |
+
+The workflow performs these steps:
+
+1. Checks out the repository and configures Java 21 with Maven dependency caching.
+2. Runs `./mvnw clean verify`; a compilation or test failure stops the pipeline.
+3. Builds the multi-stage `Dockerfile`. On `main`, it publishes both `latest` and a commit-SHA tag to Docker Hub.
+4. Copies `compose.prod.yaml` to `/opt/rideops` on EC2.
+5. Connects to EC2, validates the Compose configuration, and pulls the image tagged with `${{ github.sha }}`.
+6. Recreates the application container with `docker compose up -d --remove-orphans`. PostgreSQL remains backed by the named `rideops_postgres_data` volume.
+7. Calls `/actuator/health` every five seconds for up to one minute. A healthy response completes the deployment; otherwise, the last 100 application log lines are printed and the workflow fails.
+
+Deploying the commit-SHA tag rather than `latest` ensures that EC2 runs the exact image produced by the successful workflow and makes a previous image easy to identify for rollback.
+
+### GitHub configuration
+
+Configure these values under **Repository settings → Secrets and variables → Actions**:
+
+| Type | Name | Purpose |
+|---|---|---|
+| Variable | `DOCKERHUB_USERNAME` | Docker Hub namespace used for image tags |
+| Secret | `DOCKERHUB_TOKEN` | Docker Hub access token used to publish images |
+| Secret | `EC2_HOST` | Public IP address or DNS name of the deployment server |
+| Secret | `EC2_USER` | SSH account on the EC2 instance, typically `ubuntu` |
+| Secret | `EC2_SSH_KEY` | Private SSH key authorized by the EC2 instance |
+
+Application and database secrets are not sent through the workflow. They live in `/opt/rideops/.env` on EC2 and are consumed by `compose.prod.yaml`. At minimum, the server file supplies `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `JDBC_DATABASE_URL`, `SECRET_KEY`, `DOCKER_IMAGE`, and `APP_PORT`. Never commit this file.
+
+> [!WARNING]
+> The learning/demo workflow uses `appleboy/scp-action@v1` and `appleboy/ssh-action@v1` without an SSH host fingerprint. For a hardened production pipeline, pin third-party actions to audited commit SHAs, configure host-key verification, store runtime secrets in AWS Systems Manager Parameter Store or Secrets Manager, restrict SSH exposure, and place the application behind HTTPS.
+
+### EC2 runtime layout
+
+```text
+/opt/rideops/
+├── .env                 # Server-only secrets and runtime values
+└── compose.prod.yaml    # Copied by each deployment
+```
+
+The production Compose stack contains two services on its private default network:
+
+- `app` pulls the published RideOps image, activates the `prod` Spring profile, and publishes port `8080`.
+- `postgres` runs PostgreSQL with PostGIS. It is reachable from the application as `postgres:5432` but is not published directly to the internet.
+
+Stopping the EC2 instance stops compute billing, but its EBS volume—and therefore the Docker volume containing PostgreSQL data—continues to incur storage charges. Starting the instance again may assign a new public IP unless an Elastic IP or stable DNS name is used; update `EC2_HOST` if it changes.
+
 ## Project structure
 
 ```text
 rideops-backend/
+├── .github/workflows/ci.yaml             # Build, test, publish and EC2 deployment
+├── Dockerfile                            # Multi-stage Java 21 application image
 ├── compose.yaml                         # Local PostgreSQL + PostGIS
+├── compose.prod.yaml                    # EC2 application + PostGIS stack
 ├── docs/images/                         # README artwork and real Swagger captures
 ├── src/main/java/com/abhilash/rideops/
 │   ├── advices/                         # API error model and global exception handling
