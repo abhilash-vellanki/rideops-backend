@@ -52,3 +52,51 @@ jobs:
             ${{ vars.DOCKERHUB_USERNAME }}/rideops-backend:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  deploy:
+    name: Deploy to EC2
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build-and-test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Copy production Compose file
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: compose.prod.yaml
+          target: /opt/rideops
+          overwrite: true
+
+      - name: Deploy and verify RideOps
+        uses: appleboy/ssh-action@v1
+        env:
+          DEPLOY_IMAGE: ${{ vars.DOCKERHUB_USERNAME }}/rideops-backend:${{ github.sha }}
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          envs: DEPLOY_IMAGE
+          script: |
+            set -e
+            cd /opt/rideops
+            export DOCKER_IMAGE="$DEPLOY_IMAGE"
+
+            docker compose -f compose.prod.yaml config --quiet
+            docker compose -f compose.prod.yaml pull
+            docker compose -f compose.prod.yaml up -d --remove-orphans
+
+            for attempt in $(seq 1 12); do
+              if curl --fail --silent http://localhost:8080/actuator/health; then
+                exit 0
+              fi
+              sleep 5
+            done
+
+            docker compose -f compose.prod.yaml logs --tail=100 app
+            exit 1
